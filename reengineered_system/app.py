@@ -132,6 +132,36 @@ def pos():
         cart = data.get('cart', [])
         coupon_code = data.get('coupon', '').strip()
         
+        # Rental Logic
+        is_rental = data.get('is_rental', False)
+        customer_phone = data.get('customer_phone', '').strip()
+
+        if is_rental:
+            if not customer_phone:
+                return {'error': 'Customer phone is required for rentals'}, 400
+            
+            for cart_item in cart:
+                item = db.session.get(Item, cart_item['id'])
+                if item and item.stock_quantity >= cart_item['quantity']:
+                    # Create rental records (one per item quantity)
+                    for _ in range(cart_item['quantity']):
+                        rental = Rental(
+                            user_phone=customer_phone,
+                            item_id=item.id,
+                            rental_date=datetime.utcnow(),
+                            is_returned=False
+                        )
+                        db.session.add(rental)
+                    
+                    # Update stock
+                    item.stock_quantity -= cart_item['quantity']
+                else:
+                    return {'error': f'Insufficient stock for {item.name}'}, 400
+            
+            db.session.commit()
+            return {'success': True, 'message': 'Rental processed successfully'}
+
+        # Sale Logic
         total = 0
         discount = 0
         
@@ -172,8 +202,9 @@ def pos():
         db.session.commit()
         return {'success': True, 'sale_id': sale.id, 'discount': discount, 'final_total': sale.total_amount}
         
-    items = Item.query.filter(Item.stock_quantity > 0).all()
-    return render_template('pos.html', items=items)
+    sale_items = Item.query.filter(Item.type == 'sale', Item.stock_quantity > 0).all()
+    rental_items = Item.query.filter(Item.type == 'rental', Item.stock_quantity > 0).all()
+    return render_template('pos.html', sale_items=sale_items, rental_items=rental_items)
 
 @app.route('/rentals')
 @login_required

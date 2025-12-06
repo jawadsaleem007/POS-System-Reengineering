@@ -19,10 +19,12 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
 class Item(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True) # Auto-incrementing PK
+    legacy_id = db.Column(db.Integer, nullable=False) # ID from text files
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     stock_quantity = db.Column(db.Integer, default=0)
+    type = db.Column(db.String(20), default='sale') # 'sale' or 'rental'
 
 class Rental(db.Model):
     id = db.Column(db.Integer, primary_key=True)

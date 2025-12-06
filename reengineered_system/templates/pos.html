@@ -20,12 +20,25 @@
     <div class="flex-1 flex overflow-hidden">
         <!-- Item Grid -->
         <div class="flex-1 p-4 overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-4">Available Items</h2>
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {% for item in items %}
+            <h2 class="text-2xl font-bold mb-4" id="grid-title">Available Items (Sale)</h2>
+            
+            <!-- Sale Items Grid -->
+            <div id="sale-items-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {% for item in sale_items %}
                 <div class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition" onclick="addToCart({{ item.id }}, '{{ item.name }}', {{ item.price }})">
                     <h3 class="font-bold text-lg">{{ item.name }}</h3>
                     <p class="text-gray-600">${{ "%.2f"|format(item.price) }}</p>
+                    <p class="text-xs text-gray-400">Stock: {{ item.stock_quantity }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Rental Items Grid -->
+            <div id="rental-items-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 hidden">
+                {% for item in rental_items %}
+                <div class="bg-white p-4 rounded shadow hover:shadow-lg cursor-pointer transition border-2 border-blue-100" onclick="addToCart({{ item.id }}, '{{ item.name }}', {{ item.price }})">
+                    <h3 class="font-bold text-lg text-blue-800">{{ item.name }}</h3>
+                    <p class="text-gray-600">${{ "%.2f"|format(item.price) }} / day</p>
                     <p class="text-xs text-gray-400">Stock: {{ item.stock_quantity }}</p>
                 </div>
                 {% endfor %}
@@ -42,7 +55,19 @@
                 <p class="text-gray-500 text-center mt-10">Cart is empty</p>
             </div>
             <div class="p-4 border-t bg-gray-50">
-                <div class="mb-4">
+                <!-- Rental Toggle -->
+                <div class="mb-4 flex items-center">
+                    <input type="checkbox" id="rental-mode" class="form-checkbox h-5 w-5 text-blue-600" onchange="toggleRentalMode()">
+                    <label for="rental-mode" class="ml-2 text-gray-700 font-bold">Rental Mode</label>
+                </div>
+
+                <!-- Phone Input (Hidden by default) -->
+                <div class="mb-4 hidden" id="phone-container">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="customer-phone">Customer Phone</label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="customer-phone" type="text" placeholder="Required for rentals">
+                </div>
+
+                <div class="mb-4" id="coupon-container">
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="coupon">Coupon Code</label>
                     <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="coupon" type="text" placeholder="Enter code (e.g. SAVE10)">
                 </div>
@@ -50,7 +75,7 @@
                     <span>Total:</span>
                     <span id="cart-total">$0.00</span>
                 </div>
-                <button onclick="checkout()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded">
+                <button onclick="checkout()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded transition duration-200" id="checkout-btn">
                     Complete Sale
                 </button>
             </div>
@@ -59,6 +84,51 @@
 
     <script>
         let cart = {};
+
+        function toggleRentalMode() {
+            const isRental = document.getElementById('rental-mode').checked;
+            const phoneContainer = document.getElementById('phone-container');
+            const couponContainer = document.getElementById('coupon-container');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            const saleGrid = document.getElementById('sale-items-grid');
+            const rentalGrid = document.getElementById('rental-items-grid');
+            const gridTitle = document.getElementById('grid-title');
+
+            // Clear cart when switching modes to prevent mixing items
+            if (Object.keys(cart).length > 0) {
+                if(!confirm("Switching modes will clear your current cart. Continue?")) {
+                    document.getElementById('rental-mode').checked = !isRental;
+                    return;
+                }
+                cart = {};
+                updateCartUI();
+            }
+
+            if (isRental) {
+                phoneContainer.classList.remove('hidden');
+                couponContainer.classList.add('hidden');
+                checkoutBtn.innerText = "Complete Rental";
+                checkoutBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                checkoutBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                
+                // Switch Grids
+                saleGrid.classList.add('hidden');
+                rentalGrid.classList.remove('hidden');
+                gridTitle.innerText = "Available Items (Rental)";
+            } else {
+                phoneContainer.classList.add('hidden');
+                couponContainer.classList.remove('hidden');
+                checkoutBtn.innerText = "Complete Sale";
+                checkoutBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                checkoutBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                // Switch Grids
+                rentalGrid.classList.add('hidden');
+                saleGrid.classList.remove('hidden');
+                gridTitle.innerText = "Available Items (Sale)";
+            }
+        }
 
         function addToCart(id, name, price) {
             if (cart[id]) {
@@ -105,6 +175,8 @@
         async function checkout() {
             if (Object.keys(cart).length === 0) return;
 
+            const isRental = document.getElementById('rental-mode').checked;
+            const customerPhone = document.getElementById('customer-phone').value;
             const couponCode = document.getElementById('coupon').value;
             const cartArray = Object.values(cart);
             
@@ -116,20 +188,29 @@
                     },
                     body: JSON.stringify({ 
                         cart: cartArray,
-                        coupon: couponCode
+                        coupon: couponCode,
+                        is_rental: isRental,
+                        customer_phone: customerPhone
                     }),
                 });
 
                 const result = await response.json();
                 
                 if (response.ok) {
-                    let msg = 'Sale completed successfully!';
-                    if (result.discount > 0) {
-                        msg += `\nDiscount Applied: $${result.discount.toFixed(2)}\nFinal Total: $${result.final_total.toFixed(2)}`;
+                    if (isRental) {
+                        alert('Rental processed successfully!');
+                        document.getElementById('rental-mode').checked = false;
+                        toggleRentalMode();
+                        document.getElementById('customer-phone').value = '';
+                    } else {
+                        let msg = 'Sale completed successfully!';
+                        if (result.discount > 0) {
+                            msg += `\nDiscount Applied: $${result.discount.toFixed(2)}\nFinal Total: $${result.final_total.toFixed(2)}`;
+                        }
+                        alert(msg);
+                        document.getElementById('coupon').value = '';
                     }
-                    alert(msg);
                     cart = {};
-                    document.getElementById('coupon').value = '';
                     updateCartUI();
                     window.location.reload(); // Refresh to update stock
                 } else {
