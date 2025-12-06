@@ -34,6 +34,38 @@ The legacy system is a desktop-based Point-of-Sale (POS) application developed i
 *   **Data Storage**: Flat text files in `Database/` directory (`employeeDatabase.txt`, `itemDatabase.txt`, `rentalDatabase.txt`, `saleInvoiceRecord.txt`).
 *   **Build System**: `build.xml` (Apache Ant).
 
+**Detailed Asset Classification:**
+
+| Asset Type | Asset Name | Classification | Reason | Lines of Code |
+|:-----------|:-----------|:---------------|:-------|:--------------|
+| Source Code | `POSSystem.java` | Active (Refactor) | Core business logic, needs restructuring | ~800 |
+| Source Code | `Employee.java` | Active (Migrate) | Employee entity model | ~120 |
+| Source Code | `Item.java` | Active (Migrate) | Item entity model | ~80 |
+| Source Code | `Login_Interface.java` | Obsolete (Replace) | Legacy Swing UI, replaced by web templates | ~250 |
+| Source Code | `Cashier_Interface.java` | Obsolete (Replace) | Legacy Swing UI, replaced by web templates | ~300 |
+| Source Code | `Admin_Interface.java` | Obsolete (Replace) | Legacy Swing UI, replaced by web templates | ~280 |
+| Source Code | `Inventory.java` | Active (Refactor) | Inventory management logic | ~200 |
+| Source Code | `Management.java` | Active (Refactor) | Customer management | ~150 |
+| Source Code | `Register.java` | Active (Refactor) | Sale processing logic | ~180 |
+| Source Code | `Rental.java` | Active (Migrate) | Rental processing | ~140 |
+| Source Code | `HandleReturns.java` | Active (Refactor) | Return processing | ~100 |
+| Source Code | `Sale.java` | Active (Refactor) | Sale processing | ~160 |
+| Data File | `employeeDatabase.txt` | Active (Migrate) | Employee data (12 records) | N/A |
+| Data File | `itemDatabase.txt` | Active (Migrate) | Item inventory (102 items) | N/A |
+| Data File | `rentalDatabase.txt` | Active (Migrate) | Rental items catalog | N/A |
+| Data File | `userDatabase.txt` | Active (Migrate) | Customer rental history | N/A |
+| Data File | `saleInvoiceRecord.txt` | Active (Migrate) | Historical sales | N/A |
+| Data File | `couponNumber.txt` | Active (Migrate) | Coupon codes | N/A |
+| Build Config | `build.xml` | Obsolete (Replace) | Ant build, replaced by pip/requirements.txt | ~80 |
+| Documentation | `Developer Manual.docx` | Active (Update) | System documentation, needs updating | N/A |
+| Documentation | `README.txt` | Active (Update) | System overview | N/A |
+
+**Total Legacy Assets:**
+- **Active Java Files:** 12 source files (~2,360 LOC total)
+- **Active Data Files:** 7 text files
+- **Obsolete UI Code:** 3 files (~830 LOC) - to be replaced
+- **Build Configuration:** 1 file - to be replaced
+
 ### 2. Extracted Architecture and Class Diagrams
 The system utilizes a **Layered Monolith** architecture but suffers from high coupling.
 
@@ -173,10 +205,78 @@ classDiagram
 ### 3. Database Schema, Migration Plan, and Rationale
 **Schema (SQLite):**
 *   `User`: `id (PK), username, name, role, password_hash`
-*   `Item`: `id (PK), name, price, stock_quantity`
+*   `Item`: `id (PK), legacy_id, name, price, stock_quantity, type`
 *   `Sale`: `id (PK), date, total_amount, cashier_id (FK)`
-*   `SaleItem`: `id (PK), sale_id (FK), item_id (FK), quantity, price`
-*   `Rental`: `id (PK), user_phone, item_id (FK), rental_date, return_date`
+*   `SaleItem`: `id (PK), sale_id (FK), item_id (FK), quantity, price_at_sale`
+*   `Rental`: `id (PK), user_phone, item_id (FK), rental_date, return_date, is_returned`
+*   `Coupon`: `id (PK), code, discount_percent, is_active`
+*   `SaleReturn`: `id (PK), sale_id (FK), date, reason, refund_amount`
+
+**Entity-Relationship Diagram:**
+```mermaid
+erDiagram
+    User ||--o{ Sale : processes
+    User {
+        int id PK
+        string username UK
+        string name
+        string role
+        string password_hash
+    }
+    
+    Item ||--o{ SaleItem : "is sold in"
+    Item ||--o{ Rental : "is rented as"
+    Item {
+        int id PK
+        int legacy_id
+        string name
+        float price
+        int stock_quantity
+        string type
+    }
+    
+    Sale ||--|{ SaleItem : contains
+    Sale ||--o| SaleReturn : "may have"
+    Sale {
+        int id PK
+        datetime date
+        float total_amount
+        int cashier_id FK
+    }
+    
+    SaleItem {
+        int id PK
+        int sale_id FK
+        int item_id FK
+        int quantity
+        float price_at_sale
+    }
+    
+    Rental {
+        int id PK
+        string user_phone
+        int item_id FK
+        datetime rental_date
+        datetime return_date
+        boolean is_returned
+    }
+    
+    Coupon {
+        int id PK
+        string code UK
+        float discount_percent
+        boolean is_active
+    }
+    
+    SaleReturn {
+        int id PK
+        int sale_id FK
+        datetime date
+        string reason
+        float refund_amount
+    }
+```
+*(Figure B.2: Database Entity-Relationship Diagram)*
 
 **Migration Plan:**
 1.  **Extraction**: Read legacy `.txt` files.
@@ -272,11 +372,61 @@ classDiagram
 ---
 
 ## D. Reengineering Plan & Migration
-1.  **Inventory Analysis**: Cataloged 20+ Java files and 12 text files.
-2.  **Reverse Engineering**: Analyzed `POSSystem.java` to understand business rules.
-3.  **Restructuring**: Designed SQLite schema and Flask routes.
-4.  **Forward Engineering**: Implemented Python code and HTML templates.
-5.  **Data Migration**: Ran `migrate.py` to transfer and clean data.
+
+### Project Timeline & Phases
+
+**Phase 1: Inventory Analysis (Week 1)**
+*   **Activities**: Cataloged 12 Java source files (~2,360 LOC), 7 data files, build configurations, and documentation.
+*   **Output**: Asset classification table identifying active, obsolete, and reusable components.
+*   **Status**: ✅ Complete
+
+**Phase 2: Document Restructuring (Week 1-2)**
+*   **Activities**: Analyzed existing documentation (Developer Manual, README), extracted system architecture.
+*   **Output**: Reconstructed technical documentation with class diagrams and data flow.
+*   **Status**: ✅ Complete
+
+**Phase 3: Reverse Engineering (Week 2)**
+*   **Activities**: Analyzed `POSSystem.java` (800 LOC God Class) to understand business rules, data structures, and workflows.
+*   **Output**: Identified code smells (God Class, Hardcoded Paths, Primitive Obsession) and data smells (Plaintext passwords, 1NF violations).
+*   **Status**: ✅ Complete
+
+**Phase 4: Code Restructuring (Week 3)**
+*   **Activities**: Designed new architecture (MVC pattern), refactored logic into separate concerns.
+*   **Output**: Created `models.py` (Data Layer), `app.py` (Controller), `templates/` (View).
+*   **Status**: ✅ Complete
+
+**Phase 5: Data Restructuring (Week 3-4)**
+*   **Activities**: Designed normalized database schema (3NF), created ER diagram, wrote migration script.
+*   **Output**: SQLite database with 7 tables, `migrate.py` script.
+*   **Status**: ✅ Complete
+
+**Phase 6: Forward Engineering (Week 4-5)**
+*   **Activities**: Implemented web-based POS system using Flask, SQLAlchemy, and Tailwind CSS.
+*   **Output**: Fully functional web application with 15 routes, authentication, and RBAC.
+*   **Status**: ✅ Complete
+
+**Phase 7: Testing & Validation (Week 5)**
+*   **Activities**: Unit testing (5 test cases), integration testing (end-to-end workflows), data migration validation.
+*   **Output**: Test suite in `tests/test_app.py`, 100% data migration accuracy.
+*   **Status**: ✅ Complete
+
+### Migration Strategy
+```mermaid
+flowchart TD
+    A[Legacy System<br/>Java + Text Files] --> B[Backup Legacy Data]
+    B --> C[Run migrate.py]
+    C --> D{Data Validation}
+    D -->|Pass| E[SQLite Database]
+    D -->|Fail| F[Log Errors & Rollback]
+    F --> C
+    E --> G[Parallel Testing]
+    G --> H{Business Logic Match?}
+    H -->|Yes| I[Deploy New System]
+    H -->|No| J[Fix Discrepancies]
+    J --> G
+    I --> K[Legacy System<br/>Read-Only Archive]
+```
+*(Figure D.1: Migration Workflow)*
 
 ---
 

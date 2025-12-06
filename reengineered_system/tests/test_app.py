@@ -23,7 +23,7 @@ class POSTestCase(unittest.TestCase):
             db.session.add(user)
             
             # Create test item
-            item = Item(name='Test Item', price=10.0, stock_quantity=5)
+            item = Item(legacy_id=1000, name='Test Item', price=10.0, stock_quantity=5, type='sale')
             db.session.add(item)
             
             db.session.commit()

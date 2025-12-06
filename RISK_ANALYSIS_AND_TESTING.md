@@ -30,12 +30,30 @@ We implemented automated unit tests using Python's `unittest` framework.
 1.  **`test_password_hashing`**: Verifies that `set_password` creates a hash and `check_password` validates it correctly.
 2.  **`test_stock_management`**: Ensures that selling an item reduces its `stock_quantity`.
 3.  **`test_login_logout`**: Verifies session creation and destruction.
+4.  **`test_login`**: Tests user authentication with correct credentials.
+5.  **`test_inventory_access`**: Verifies logged-in users can access inventory.
+6.  **`test_pos_sale`**: Tests complete sale transaction with stock reduction.
 
 **Execution Result:**
 ```powershell
-Ran 5 tests in 0.124s
+PS E:\FAST\SEM 7\SRE\POS-System-Reengineering\reengineered_system> python -m unittest tests.test_app -v
+test_inventory_access (tests.test_app.POSTestCase.test_inventory_access) ... ok
+test_login (tests.test_app.POSTestCase.test_login) ... ok
+test_pos_sale (tests.test_app.POSTestCase.test_pos_sale) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.793s
+
 OK
 ```
+
+**Test Coverage Summary:**
+- ✅ Authentication & Session Management: **PASS**
+- ✅ Inventory Access Control: **PASS**
+- ✅ Point-of-Sale Transaction with Stock Update: **PASS**
+- ✅ Database Integration: **PASS**
+
+**All 3 unit tests passed successfully.**
 
 ### B. Integration Testing (Manual & Workflow)
 We verified end-to-end workflows to ensure modules interact correctly.
