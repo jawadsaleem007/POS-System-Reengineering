@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History - POS System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-blue-600 p-4 text-white flex justify-between items-center">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold"><a href="{{ url_for('index') }}">POS System</a></h1>
+            <div>
+                <a href="{{ url_for('index') }}" class="text-white hover:underline mr-4">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto mt-8 p-4">
+        <h2 class="text-3xl font-bold mb-6">Sales History</h2>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th class="w-1/12 py-3 px-4 uppercase font-semibold text-sm text-left bg-gray-200 text-gray-700">ID</th>
+                        <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm text-left bg-gray-200 text-gray-700">Date</th>
+                        <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm text-left bg-gray-200 text-gray-700">Total</th>
+                        <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm text-left bg-gray-200 text-gray-700">Status</th>
+                        <th class="w-1/6 py-3 px-4 uppercase font-semibold text-sm text-left bg-gray-200 text-gray-700">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="text-gray-700">
+                    {% for sale in sales %}
+                    <tr>
+                        <td class="w-1/12 py-3 px-4 border-b border-gray-200">{{ sale.id }}</td>
+                        <td class="w-1/6 py-3 px-4 border-b border-gray-200">{{ sale.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td class="w-1/6 py-3 px-4 border-b border-gray-200">${{ "%.2f"|format(sale.total_amount) }}</td>
+                        <td class="w-1/6 py-3 px-4 border-b border-gray-200">
+                            {% if sale.return_record %}
+                                <span class="text-red-500 font-bold">Returned</span>
+                            {% else %}
+                                <span class="text-green-500">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td class="w-1/6 py-3 px-4 border-b border-gray-200">
+                            {% if not sale.return_record %}
+                                <a href="{{ url_for('return_sale', sale_id=sale.id) }}" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded text-xs">Return</a>
+                            {% else %}
+                                <span class="text-gray-500 text-xs">Refunded: ${{ "%.2f"|format(sale.return_record.refund_amount) }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
