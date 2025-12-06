@@ -302,9 +302,51 @@ classDiagram
 
 ## G. Work Distribution
 
-| Team Member | Role | Contribution | Refactorings Documented |
+The project workload was evenly distributed among the three team members, with each member taking ownership of specific domains while collaborating on the core system integration.
+
+### 1. Jawad (Architect & Team Lead)
+**Role:** System Architect, Core Logic Developer
+**Key Contributions:**
+*   **Architecture Design**: Led the transition from the Legacy Monolithic architecture to the modern MVC (Model-View-Controller) pattern using Flask.
+*   **Core Implementation**: Developed the main application controller (`app.py`), defining routes and request handling logic.
+*   **Legacy Analysis**: Analyzed the `POSSystem` "God Class" to identify responsibilities that needed to be extracted.
+*   **Refactoring Focus**:
+    *   *Monolith to MVC*: Split the single Java class into Python Models and Controllers.
+    *   *Configuration Management*: Centralized settings (DB paths, Secret Keys) to remove hardcoded values.
+    *   *Algorithm Optimization*: Replaced linear file searches with O(1) database queries.
+
+### 2. Zubair (Backend & Data Engineer)
+**Role:** Database Administrator, Security Specialist
+**Key Contributions:**
+*   **Database Design**: Designed the normalized SQLite schema (`models.py`) to replace flat text files.
+*   **Data Migration**: Wrote the `migrate.py` script to parse, clean, and import legacy data into the new system without data loss.
+*   **Security Implementation**: Implemented `Werkzeug` security hashing for passwords and `Flask-Login` for session management.
+*   **Refactoring Focus**:
+    *   *Encapsulate Data Access*: Moved raw file I/O operations into ORM methods.
+    *   *Security Hardening*: Replaced plaintext password checks with cryptographic validation.
+    *   *Data Normalization*: Fixed the 1NF violations in the rental data structure.
+
+### 3. Usman (Frontend Developer & QA)
+**Role:** UI/UX Designer, Quality Assurance
+**Key Contributions:**
+*   **UI Modernization**: Designed the responsive web interface using **Tailwind CSS** and **HTML5**, replacing the rigid Java Swing forms.
+*   **Template Engine**: Implemented Jinja2 templates to dynamically render data served by the backend.
+*   **Testing**: Developed the Unit Test suite (`tests/test_app.py`) and performed manual integration testing of the Sales and Return workflows.
+*   **Refactoring Focus**:
+    *   *Presentation Separation*: Decoupled the UI code from business logic.
+    *   *Input Validation*: Added robust form validation to prevent crashes (replacing fragile `Integer.parseInt`).
+    *   *DRY Principle*: Consolidated repetitive code blocks into reusable templates and functions.
+
+### Summary Table
+
+| Team Member | Role | Contribution % | Primary Domain |
 | :--- | :--- | :--- | :--- |
-| **Jawad** | Architect & Lead | 33% | Monolith->MVC, Config, Search Algo |
-| **Zubair** | Backend & Data | 33% | Data Access, Security, Normalization |
-| **Usman** | Frontend & QA | 33% | UI Separation, Validation, DRY |
+| **Jawad** | Architect & Lead | 33.3% | Architecture, Controller Logic, Refactoring Strategy |
+| **Zubair** | Backend & Data | 33.3% | Database, Security, Migration, Data Integrity |
+| **Usman** | Frontend & QA | 33.3% | UI/UX, Testing, Validation, User Experience |
+
+**Signatures:**
+*   Jawad: _________________
+*   Zubair: _________________
+*   Usman: _________________
 

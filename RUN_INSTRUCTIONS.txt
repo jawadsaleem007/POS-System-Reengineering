@@ -1,0 +1,61 @@
+# How to Run the Point-of-Sale System
+
+## Prerequisites
+- Python 3.10 or higher
+- pip (Python Package Manager)
+
+## Setup Instructions
+
+1. **Navigate to the project directory**
+   Open your terminal or command prompt and navigate to the `reengineered_system` folder:
+   ```powershell
+   cd reengineered_system
+   ```
+
+2. **Install Dependencies**
+   Install the required Python libraries using `requirements.txt`:
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+3. **Initialize the Database**
+   Run the migration script to create the database and import data from the legacy text files:
+   ```powershell
+   python migrate.py
+   ```
+   *Note: This will create a `pos.db` file in the `instance` folder.*
+
+4. **Run the Application**
+   Start the Flask web server:
+   ```powershell
+   python app.py
+   ```
+
+5. **Access the System**
+   Open your web browser and go to:
+   http://127.0.0.1:5000
+
+## Default Login Credentials
+(Migrated from `Database/employeeDatabase.txt`)
+
+The system uses **Employee IDs** as usernames.
+
+**Admin:**
+- **Username**: `110001`
+- **Password**: `1`
+
+**Cashier:**
+- **Username**: `110002`
+- **Password**: `lehigh2016`
+
+*(Other users from the legacy database are also valid)*
+
+## Running Tests
+To run the automated unit tests for the system, execute the following command from the project root:
+```powershell
+python -m unittest discover reengineered_system/tests
+```
+
+## Troubleshooting
+- If you see a "Database not found" error, ensure you ran `python migrate.py`.
+- If `pip` is not recognized, ensure Python is added to your system PATH.
